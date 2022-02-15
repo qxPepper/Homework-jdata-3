@@ -1,24 +1,29 @@
 package ru.netology.homeworkjdata3.repository;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.stereotype.Repository;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 @Repository
 public class MyRepository {
-    @Autowired
-    private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
+    private final String myScript;
+    private final NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
-    private String myScript;
+    public MyRepository(NamedParameterJdbcTemplate namedParameterJdbcTemplate) {
+        this.namedParameterJdbcTemplate = namedParameterJdbcTemplate;
+
+        myScript = read("myScript.sql");
+    }
 
     private static String read(String scriptFileName) {
         try (InputStream is = new ClassPathResource(scriptFileName).getInputStream();
@@ -29,16 +34,15 @@ public class MyRepository {
         }
     }
 
-    public String getProductName(String name) {
-        myScript = read("myScript.sql");
-        SqlRowSet sqlRowSet = namedParameterJdbcTemplate.queryForRowSet(myScript, Map.of("name", name));
+    public List<String> getProductName(String name) {
+        MapSqlParameterSource param = new MapSqlParameterSource();
+        param.addValue("name", name);
 
-        StringBuilder result = new StringBuilder();
-        while (sqlRowSet.next()) {
-            String surname = sqlRowSet.getString("product_name") + "\n";
-            result.append(surname);
-        }
-        System.out.println(result.toString());
-        return result.toString();
+        List<Map<String, Object>> listMap = namedParameterJdbcTemplate.queryForList(myScript, param);
+
+        List<String> list = new ArrayList<>();
+        listMap.forEach(s -> list.add((String) s.get("product_name")));
+
+        return list;
     }
 }

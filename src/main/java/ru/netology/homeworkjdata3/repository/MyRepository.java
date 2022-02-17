@@ -9,20 +9,16 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @Repository
 public class MyRepository {
-    private final String myScript;
+    private final static String myScript = read("myScript.sql");
     private final NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
     public MyRepository(NamedParameterJdbcTemplate namedParameterJdbcTemplate) {
         this.namedParameterJdbcTemplate = namedParameterJdbcTemplate;
-
-        myScript = read("myScript.sql");
     }
 
     private static String read(String scriptFileName) {
@@ -35,14 +31,7 @@ public class MyRepository {
     }
 
     public List<String> getProductName(String name) {
-        MapSqlParameterSource param = new MapSqlParameterSource();
-        param.addValue("name", name);
-
-        List<Map<String, Object>> listMap = namedParameterJdbcTemplate.queryForList(myScript, param);
-
-        List<String> list = new ArrayList<>();
-        listMap.forEach(s -> list.add((String) s.get("product_name")));
-
-        return list;
+        MapSqlParameterSource param = new MapSqlParameterSource("name", name);
+        return namedParameterJdbcTemplate.queryForList(myScript, param, String.class);
     }
 }
